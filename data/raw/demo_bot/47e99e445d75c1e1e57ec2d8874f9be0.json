@@ -1,0 +1,13 @@
+{
+  "url": "https://docs.python.org/3/about.html",
+  "title": "About this documentation — Python 3.14.3 documentation",
+  "content": "About this documentation\n¶\nPython’s documentation is generated from\nreStructuredText\nsources\nusing\nSphinx\n, a documentation generator originally created for Python\nand now maintained as an independent project.\nDevelopment of the documentation and its toolchain is an entirely volunteer\neffort, just like Python itself.  If you want to contribute, please take a\nlook at the\nDealing with Bugs\npage for information on how to do so.  New\nvolunteers are always welcome!\nMany thanks go to:\nFred L. Drake, Jr., the creator of the original Python documentation toolset\nand author of much of the content;\nthe\nDocutils\nproject for creating\nreStructuredText and the Docutils suite;\nFredrik Lundh for his Alternative Python Reference project from which Sphinx\ngot many good ideas.\nContributors to the Python documentation\n¶\nMany people have contributed to the Python language, the Python standard\nlibrary, and the Python documentation.  See\nMisc/ACKS\nin the Python\nsource distribution for a partial list of contributors.\nIt is only with the input and contributions of the Python community\nthat Python has such wonderful documentation – Thank You!",
+  "content_length": 1134,
+  "crawled_at": "2026-03-26T19:16:34.994088",
+  "chatbot_id": "demo_bot",
+  "metadata": {
+    "page_type": "documentation",
+    "domain": "docs.python.org",
+    "path": "/3/about.html"
+  }
+}

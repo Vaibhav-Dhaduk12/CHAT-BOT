@@ -19,10 +19,13 @@
 - [Installation & Setup](#installation--setup)
 - [Quick Start Guide](#quick-start-guide)
 - [Running the Project](#running-the-project)
+  - [`run_pipeline.py`](#full-4-step-rag-pipeline-) - Full RAG Pipeline Script
+  - [Individual Components](#individual-component-usage)
 - [Configuration](#configuration)
 - [Testing](#testing)
 - [Troubleshooting](#troubleshooting)
 - [Next Steps](#next-steps)
+- [Additional Resources](#additional-resources)
 
 ---
 
@@ -255,85 +258,164 @@ pytest tests/test_phase1.py -v
 
 ## 🔄 Running the Project
 
-### Full 4-Step RAG Pipeline
+> 📚 **For a quick reference with examples, see [PIPELINE_USAGE.md](PIPELINE_USAGE.md)**
 
-Create a file `run_pipeline.py`:
+### Full 4-Step RAG Pipeline ⭐
 
-```python
-import asyncio
-import json
-from pathlib import Path
-from scripts.crawler import WebCrawler
-from api.processor import ChunkProcessor
-from api.embeddings import EmbeddingManager
+The **`run_pipeline.py`** file implements the complete RAG pipeline with all 4 steps:
 
-async def main():
-    chatbot_id = "my_bot"
-    
-    # ============== STEP 1: CRAWL ==============
-    print("📡 Step 1: Crawling website...")
-    crawler = WebCrawler(chatbot_id=chatbot_id)
-    await crawler.crawl_website(
-        "https://docs.python.org/3/library/functions.html",
-        max_depth=1,
-        max_pages=5
-    )
-    stats = crawler.get_crawl_stats()
-    print(f"✅ Crawled {stats['total_pages']} pages")
-    
-    # ============== STEP 2: PROCESS ==============
-    print("\n📝 Step 2: Processing documents...")
-    processor = ChunkProcessor(chatbot_id=chatbot_id)
-    chunks = await processor.process_raw_documents()
-    stats = processor.get_processing_stats()
-    print(f"✅ Created {stats['total_chunks']} chunks from {stats['total_documents']} docs")
-    
-    # ============== STEP 3: EMBED ==============
-    print("\n🧠 Step 3: Generating embeddings...")
-    manager = EmbeddingManager("huggingface", "faiss")
-    success = await manager.embed_and_store(chunks, namespace=chatbot_id)
-    if success:
-        print(f"✅ Embedded and indexed {len(chunks)} chunks")
-    
-    # ============== STEP 4: QUERY ==============
-    print("\n🔍 Step 4: Testing retrieval...")
-    results = await manager.query(
-        "What are built-in functions?",
-        namespace=chatbot_id,
-        top_k=3
-    )
-    
-    print(f"\nTop {len(results)} results:")
-    for i, result in enumerate(results, 1):
-        print(f"\n{i}. {result['text'][:150]}...")
-        print(f"   Distance: {result['distance']:.4f}")
+**Step 1: 📡 CRAWL** → Scrape website content  
+**Step 2: 📝 PROCESS** → Create semantic chunks  
+**Step 3: 🧠 EMBED** → Generate embeddings & index with FAISS  
+**Step 4: 🔍 QUERY** → Retrieve similar documents  
 
-if __name__ == "__main__":
-    asyncio.run(main())
-```
+#### Quick Start (Default Settings)
 
-Run it:
 ```bash
+# Run with default settings (crawls Python docs, 5 pages)
 python run_pipeline.py
 ```
 
 Expected output:
 ```
-📡 Step 1: Crawling website...
-✅ Crawled 5 pages
+════════════════════════════════════════════════════════
+📡 STEP 1: CRAWLING WEBSITE
+════════════════════════════════════════════════════════
 
-📝 Step 2: Processing documents...
-✅ Created 47 chunks from 5 docs
+✅ Crawling Complete!
+   📄 Pages crawled: 5
+   📊 Total bytes: 245,892
+   ⏱️  Time taken: 12.34s
+   📁 Stored in: data/raw/demo_bot/
 
-🧠 Step 3: Generating embeddings...
-✅ Embedded and indexed 47 chunks
+════════════════════════════════════════════════════════
+📝 STEP 2: PROCESSING DOCUMENTS
+════════════════════════════════════════════════════════
 
-🔍 Step 4: Testing retrieval...
+✅ Processing Complete!
+   📚 Documents processed: 5
+   ✂️  Chunks created: 47
+   📊 Total tokens: 18,392
+   📁 Stored in: data/processed/demo_bot/chunks_index.json
 
-Top 3 results:
-1. The built-in functions are defined in the standard library...
-   Distance: 0.2341
+════════════════════════════════════════════════════════
+🧠 STEP 3: GENERATING EMBEDDINGS & INDEXING
+════════════════════════════════════════════════════════
+
+✅ Embedding Complete!
+   🔢 Chunks indexed: 47
+   📦 Embedding dimension: 384
+   💾 Stored in: data/vectors/demo_bot.pkl
+
+════════════════════════════════════════════════════════
+🔍 STEP 4: QUERYING & RETRIEVAL
+════════════════════════════════════════════════════════
+
+📌 Query 1: "What are built-in functions?"
+   ✅ Found 3 results:
+   1. The built-in functions are defined in the standard library...
+      📊 Distance: 0.1234
+   2. Functions can be called with various arguments...
+      📊 Distance: 0.2341
+
+════════════════════════════════════════════════════════
+📊 PIPELINE SUMMARY
+════════════════════════════════════════════════════════
+✅ Pipeline Status: SUCCESS
+⏱️  Total Time: 35.42s
+📄 Pages Crawled: 5
+✂️  Chunks Created: 47
+🔎 Queries Executed: 3
+📁 Chatbot ID: demo_bot
+════════════════════════════════════════════════════════
 ```
+
+#### Advanced Usage (Custom Parameters)
+
+```bash
+# Crawl a custom website with more depth
+python run_pipeline.py \
+  --url "https://docs.python.org/3/library/" \
+  --chatbot-id "python_docs" \
+  --max-depth 2 \
+  --max-pages 20
+
+# Use different embedding provider
+python run_pipeline.py \
+  --embedding-provider huggingface \
+  --vector-db faiss
+
+# All options
+python run_pipeline.py \
+  --url "https://example.com" \
+  --chatbot-id "my_bot" \
+  --max-depth 3 \
+  --max-pages 50 \
+  --embedding-provider huggingface \
+  --vector-db faiss
+```
+
+#### Command-Line Arguments
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--url` | Python docs | Starting URL to crawl |
+| `--chatbot-id` | `demo_bot` | Unique identifier for chatbot |
+| `--max-depth` | `1` | Maximum crawl depth (1-5 recommended) |
+| `--max-pages` | `5` | Maximum pages to crawl per domain |
+| `--embedding-provider` | `huggingface` | `huggingface` or `openai` |
+| `--vector-db` | `faiss` | `faiss` or `chromadb` |
+
+#### File Location: `run_pipeline.py`
+
+The script is located at the project root:
+```
+CHAT-BOT/
+├── run_pipeline.py          ← 👈 Full pipeline implementation
+├── README.md
+├── requirements.txt
+└── ... (other files)
+```
+
+#### Features
+
+✅ **Beautiful Progress Output** - Formatted output with emojis and metrics  
+✅ **Error Handling** - Catches and logs errors gracefully  
+✅ **Async Throughout** - Non-blocking I/O for performance  
+✅ **Configurable** - CLI arguments for all parameters  
+✅ **Logging** - Structured logs for debugging  
+✅ **Statistics** - Detailed metrics at each step  
+✅ **Sample Queries** - Built-in test queries for retrieval  
+
+#### What Happens Behind the Scenes
+
+1. **Crawl**: Playwright downloads & renders each page, extracts text
+2. **Process**: LangChain chunks text semantically (maintaining context)
+3. **Embed**: HuggingFace generates 384-dimensional embeddings
+4. **Index**: FAISS stores vectors for similarity search
+5. **Query**: Tests retrieval with sample queries (shows distance scores)
+
+#### Output Files
+
+After running, check these directories:
+
+```bash
+# Raw crawled documents
+ls data/raw/demo_bot/*.json
+
+# Processed chunks
+cat data/processed/demo_bot/chunks_index.json
+
+# Vector index
+ls data/vectors/demo_bot.pkl
+```
+
+#### Performance Tips
+
+- **First run slower**: HuggingFace model downloads ~240MB (cached afterward)
+- **Reduce pages**: Use `--max-pages 5` to test quickly
+- **Shallow crawl**: Use `--max-depth 1` for faster testing
+- **Smaller batch sizes**: Edit `.env` if running out of memory
 
 ### Individual Component Usage
 
@@ -585,6 +667,7 @@ python run_pipeline.py  # Recreates fresh index
 
 ## 📚 Additional Resources
 
+- **[PIPELINE_USAGE.md](PIPELINE_USAGE.md)** - Quick reference & common examples for `run_pipeline.py`
 - **[Phase 1 Complete Documentation](PHASE_1_COMPLETE.md)** - Detailed completion summary
 - **[Phase 1 Technical README](PHASE_1_README.md)** - Advanced setup & configuration
 - **[LangChain Docs](https://python.langchain.com/)** - RAG framework documentation

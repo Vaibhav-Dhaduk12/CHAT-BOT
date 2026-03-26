@@ -195,7 +195,11 @@ class ChunkProcessor:
                 "chatbot_id": self.chatbot_id,
                 "total_chunks": 0,
                 "avg_chunk_size": 0,
-                "avg_token_count": 0
+                "total_characters": 0,
+                "total_tokens": 0,
+                "avg_token_count": 0,
+                "chunk_size_config": settings.CHUNK_SIZE,
+                "chunk_overlap_config": settings.CHUNK_OVERLAP
             }
         
         total_size = sum(c.get("content_length", 0) for c in chunks)

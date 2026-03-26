@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Setup & Configuration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .info-box code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+            font-size: 12px;
+        }
+
+        .chatbot-list {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .chatbot-card {
+            background: #fafafa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chatbot-card:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+            transform: translateX(5px);
+        }
+
+        .chatbot-card.active {
+            background: #f0f4ff;
+            border-color: #667eea;
+        }
+
+        .chatbot-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chatbot-url {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chatbot-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        button.secondary:hover {
+            background: #e0e0e0;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .command-box {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .copy-btn:hover {
+            background: #764ba2;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-ready {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 30px 0;
+        }
+
+        .example {
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 13px;
+            border-left: 3px solid #667eea;
+        }
+
+        .example strong {
+            color: #667eea;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #155724;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #667eea;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Chatbot Management Center</h1>
+        <p class="subtitle">Configure and manage your AI chatbots</p>
+
+        <div class="success-message" id="successMessage">
+            ✅ Setup instructions copied to clipboard!
+        </div>
+
+        <!-- Section 1: Available Chatbots -->
+        <div class="section">
+            <h2>📊 Available Chatbots</h2>
+            <div id="chatbotsList" class="chatbot-list">
+                <div style="text-align: center; padding: 20px;">
+                    <div class="loading" style="margin: 0 auto;"></div>
+                    <p style="margin-top: 10px; color: #999;">Loading chatbots...</p>
+                </div>
+            </div>
+            <div class="info-box">
+                <strong>ℹ️ Tip:</strong> Click on any chatbot to use it with the configuration below, or create a new one.
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Section 2: Current Selection -->
+        <div class="section">
+            <h2>🎯 Currently Selected</h2>
+            <div class="info-box">
+                <strong>Chatbot ID:</strong> <span id="selectedBot">phoenix_insurance_bot</span><br>
+                <strong>Website:</strong> <span id="selectedSite">https://viphub.phoenixins.mu/</span><br>
+                <strong>Indexed Chunks:</strong> <span id="selectedChunks">-</span><br>
+                <strong>Status:</strong> <span class="status-badge status-ready" id="selectedStatus">Ready</span>
+                <br><br>
+                <button id="goToChatBtn" style="background: #667eea; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%;">💬 Go to Chat with This Bot</button>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Section 3: Create New Chatbot -->
+        <div class="section">
+            <h2>🌐 Create New Chatbot</h2>
+            
+            <div class="form-group">
+                <label for="websiteUrl">Website URL *</label>
+                <input 
+                    type="url" 
+                    id="websiteUrl" 
+                    placeholder="https://example.com"
+                >
+                <div class="example">
+                    <strong>Example:</strong> https://docs.myapp.com or https://shop.com
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="chatbotId">Chatbot ID *</label>
+                <input 
+                    type="text" 
+                    id="chatbotId" 
+                    placeholder="my_company_bot"
+                >
+                <div class="example">
+                    <strong>Tip:</strong> Use lowercase, underscores only (e.g., company_chatbot, support_bot)
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="crawlPages">Max Pages to Crawl</label>
+                <input 
+                    type="number" 
+                    id="crawlPages" 
+                    value="50"
+                    min="1"
+                    max="500"
+                >
+                <div class="example">
+                    <strong>Tip:</strong> Start with 50 pages. Takes ~5-10 minutes. More = better knowledge.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="crawlDepth">Crawl Depth (folder levels)</label>
+                <input 
+                    type="number" 
+                    id="crawlDepth" 
+                    value="3"
+                    min="1"
+                    max="10"
+                >
+                <div class="example">
+                    <strong>Tip:</strong> How deep to follow links. 3 is usually good.
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button onclick="generateCommand()">📋 Generate Command</button>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Section 4: Generated Command -->
+        <div class="section">
+            <h2>🚀 Generated Command</h2>
+            
+            <div class="info-box">
+                <strong>Step 1:</strong> Fill in the website details above<br>
+                <strong>Step 2:</strong> Click "Generate Command"<br>
+                <strong>Step 3:</strong> Copy the command and run it in terminal<br>
+                <strong>Step 4:</strong> Wait for indexing (5-15 minutes)<br>
+                <strong>Step 5:</strong> The chatbot will automatically be ready to use
+            </div>
+
+            <h3 style="color: #667eea; font-size: 14px; margin: 20px 0 10px 0; font-weight: 600;">Command to Run:</h3>
+            <div class="command-box" id="commandBox">
+# Configure your URL and chatbot ID above, then click "Generate Command"
+            </div>
+            <button class="copy-btn" onclick="copyCommand()" style="display: none;" id="copyBtn">
+                📋 Copy Command
+            </button>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Section 5: Quick Links -->
+        <div class="section">
+            <h2>🔗 Quick Links</h2>
+            <div class="button-group">
+                <button class="secondary" onclick="window.location.href='http://localhost:8000'">
+                    💬 Open Chatbot
+                </button>
+                <button class="secondary" onclick="window.location.href='http://localhost:8000/docs'">
+                    📖 API Docs
+                </button>
+                <button class="secondary" onclick="location.reload()">
+                    🔄 Refresh Page
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentChatbotId = 'phoenix_insurance_bot';
+
+        async function loadChatbots() {
+            try {
+                const response = await fetch('/api/list-chatbots');
+                if (!response.ok) throw new Error('Failed to load chatbots');
+                
+                const data = await response.json();
+                const list = document.getElementById('chatbotsList');
+                
+                if (data.chatbots && data.chatbots.length > 0) {
+                    list.innerHTML = data.chatbots.map(bot => `
+                        <div class="chatbot-card ${bot.id === currentChatbotId ? 'active' : ''}" onclick="selectChatbot('${bot.id}', '${bot.url}', ${bot.chunks})">
+                            <div class="chatbot-name">
+                                ${bot.id === currentChatbotId ? '✓' : '○'} ${bot.id}
+                            </div>
+                            <div class="chatbot-url">🌐 ${bot.url}</div>
+                            <div class="chatbot-stats">
+                                <div class="stat">📚 ${bot.chunks} chunks</div>
+                                <div class="stat">📝 ${bot.raw_files} raw files</div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<div class="info-box">No chatbots found yet. Create one to get started!</div>';
+                }
+            } catch (error) {
+                console.error('Error loading chatbots:', error);
+                document.getElementById('chatbotsList').innerHTML = '<div class="info-box" style="border-left-color: #dc3545;">⚠️ Error loading chatbots. Make sure the server is running.</div>';
+            }
+        }
+
+        function selectChatbot(id, url, chunks) {
+            currentChatbotId = id;
+            document.getElementById('selectedBot').textContent = id;
+            document.getElementById('selectedSite').textContent = url;
+            document.getElementById('selectedChunks').textContent = chunks;
+            
+            // Save to localStorage so chat page can use it
+            localStorage.setItem('selectedChatbot', id);
+            
+            // Update form with selected bot
+            document.getElementById('chatbotId').value = id;
+            document.getElementById('websiteUrl').value = url;
+            
+            // Enable the "Go to Chat" button
+            const goToChatBtn = document.getElementById('goToChatBtn');
+            if (goToChatBtn) {
+                goToChatBtn.onclick = () => {
+                    localStorage.setItem('selectedChatbot', id);
+                    window.location.href = '/';
+                };
+                goToChatBtn.style.opacity = '1';
+                goToChatBtn.style.cursor = 'pointer';
+            }
+            
+            // Refresh list to show selection
+            loadChatbots();
+        }
+
+        function generateCommand() {
+            const url = document.getElementById('websiteUrl').value.trim();
+            const chatbotId = document.getElementById('chatbotId').value.trim();
+            const maxPages = document.getElementById('crawlPages').value;
+            const maxDepth = document.getElementById('crawlDepth').value;
+
+            // Validation
+            if (!url || !chatbotId) {
+                alert('Please fill in Website URL and Chatbot ID');
+                return;
+            }
+
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                alert('URL must start with http:// or https://');
+                return;
+            }
+
+            // Generate command
+            const command = `python run_pipeline.py \`
+  --url "${url}" \`
+  --chatbot-id "${chatbotId}" \`
+  --max-pages ${maxPages} \`
+  --max-depth ${maxDepth}`;
+
+            // Display command
+            document.getElementById('commandBox').textContent = command;
+            document.getElementById('copyBtn').style.display = 'block';
+            
+            // Update selection
+            currentChatbotId = chatbotId;
+            
+            // Show success message
+            showSuccess();
+        }
+
+        function copyCommand() {
+            const command = document.getElementById('commandBox').textContent;
+            navigator.clipboard.writeText(command).then(() => {
+                const btn = document.getElementById('copyBtn');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        function showSuccess() {
+            const msg = document.getElementById('successMessage');
+            msg.classList.add('show');
+            setTimeout(() => {
+                msg.classList.remove('show');
+            }, 3000);
+        }
+
+        // Allow Enter key to generate command
+        document.getElementById('websiteUrl').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') generateCommand();
+        });
+        document.getElementById('chatbotId').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') generateCommand();
+        });
+
+        // Load chatbots on page load
+        document.addEventListener('DOMContentLoaded', loadChatbots);
+
+        // Refresh chatbots list every 5 seconds
+        setInterval(loadChatbots, 5000);
+    </script>
+</body>
+</html>

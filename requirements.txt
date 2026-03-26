@@ -3,11 +3,11 @@
 # ========================================
 
 # Web Server
-fastapi==0.95.2
-uvicorn[standard]==0.23.0
+fastapi==0.104.0
+uvicorn[standard]==0.24.0
 
 # Data Validation
-pydantic==1.10.13
+pydantic==2.5.0
 
 # Async Utilities
 aiofiles

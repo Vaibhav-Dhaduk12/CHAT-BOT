@@ -97,7 +97,7 @@ class WebCrawler:
         
         try:
             page = await context.new_page()
-            await page.set_default_timeout(settings.CRAWLER_TIMEOUT * 1000)
+            page.set_default_timeout(settings.CRAWLER_TIMEOUT * 1000)
             
             logger.debug(f"Fetching: {url}")
             await page.goto(url, wait_until="domcontentloaded")
@@ -123,25 +123,26 @@ class WebCrawler:
             """)
             
             # Crawl child pages
-            for link in links[:10]:  # Limit links per page
-                try:
-                    normalized_link = self._normalize_url(link)
-                    if normalized_link not in self.visited_urls:
-                        child_docs = await self._crawl_recursive(
-                            context=context,
-                            url=normalized_link,
-                            depth=depth + 1,
-                            base_domain=base_domain
-                        )
-                        documents.extend(child_docs)
-                except Exception as e:
-                    logger.warning(f"Error crawling child link {link}: {e}")
-                    continue
+            if links:
+                for link in links[:10]:  # Limit links per page
+                    try:
+                        normalized_link = self._normalize_url(link)
+                        if normalized_link not in self.visited_urls:
+                            child_docs = await self._crawl_recursive(
+                                context=context,
+                                url=normalized_link,
+                                depth=depth + 1,
+                                base_domain=base_domain
+                            )
+                            documents.extend(child_docs)
+                    except Exception as e:
+                        logger.warning(f"Error crawling child link {link}: {e}")
+                        continue
             
             await page.close()
             
         except Exception as e:
-            logger.error(f"Error crawling {url}: {e}")
+            logger.error(f"Error crawling {url}: {e}", exc_info=True)
             return documents
         
         return documents
@@ -255,7 +256,7 @@ class WebCrawler:
         
         for file in raw_files:
             total_documents += 1
-            async with aiofiles.open(file, "r") as f:
+            async with aiofiles.open(file, "r", encoding="utf-8") as f:
                 content = await f.read()
                 doc = json.loads(content)
                 total_content_length += doc.get("content_length", 0)

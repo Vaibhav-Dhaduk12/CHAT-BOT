@@ -1,0 +1,13 @@
+{
+  "url": "https://docs.python.org/3/improve-page.html?pagetitle=What%E2%80%99s+New+in+Python&pageurl=https%3A%2F%2Fdocs.python.org%2F3%2Fwhatsnew%2Findex.html&pagesource=whatsnew%2Findex.rst",
+  "title": "Improve a documentation page — Python 3.14.3 documentation",
+  "content": "Improve a documentation page\n¶\nWe are always interested to hear ideas about improvements to the documentation.\nYou were reading “What’s New in Python” at\nhttps://docs.python.org/3/whatsnew/index.html\n.  The source for that page is on\nGitHub\n.\nYou have a few ways to ask questions or suggest changes:\nYou can start a discussion about the page on the Python discussion forum.\nThis link will start a pre-populated topic:\nQuestion about page “What’s New in Python”\n.\nYou can open an issue on the Python GitHub issue tracker. This link will\ncreate a new pre-populated issue:\nDocs: problem with page “What’s New in Python”\n.\nYou can\nedit the page on GitHub\nto open a pull request and begin the contribution process.",
+  "content_length": 709,
+  "crawled_at": "2026-03-26T19:16:37.450385",
+  "chatbot_id": "demo_bot",
+  "metadata": {
+    "page_type": "documentation",
+    "domain": "docs.python.org",
+    "path": "/3/improve-page.html"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "url": "https://docs.python.org/3/improve-page.html?pagetitle=Dealing+with+Bugs&pageurl=https%3A%2F%2Fdocs.python.org%2F3%2Fbugs.html&pagesource=bugs.rst",
+  "title": "Improve a documentation page — Python 3.14.3 documentation",
+  "content": "Improve a documentation page\n¶\nWe are always interested to hear ideas about improvements to the documentation.\nYou were reading “Dealing with Bugs” at\nhttps://docs.python.org/3/bugs.html\n.  The source for that page is on\nGitHub\n.\nYou have a few ways to ask questions or suggest changes:\nYou can start a discussion about the page on the Python discussion forum.\nThis link will start a pre-populated topic:\nQuestion about page “Dealing with Bugs”\n.\nYou can open an issue on the Python GitHub issue tracker. This link will\ncreate a new pre-populated issue:\nDocs: problem with page “Dealing with Bugs”\n.\nYou can\nedit the page on GitHub\nto open a pull request and begin the contribution process.",
+  "content_length": 690,
+  "crawled_at": "2026-03-26T19:16:36.589642",
+  "chatbot_id": "demo_bot",
+  "metadata": {
+    "page_type": "documentation",
+    "domain": "docs.python.org",
+    "path": "/3/improve-page.html"
+  }
+}
