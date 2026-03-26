@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG Chat Widget – Demo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+    }
+    header {
+      background: #4f46e5;
+      color: #fff;
+      padding: 18px 32px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -.3px;
+    }
+    main {
+      max-width: 800px;
+      margin: 48px auto;
+      padding: 0 24px;
+    }
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    p  { line-height: 1.7; color: #475569; }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px 32px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      margin-top: 32px;
+    }
+    .card h2 { margin-top: 0; font-size: 18px; }
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 18px 20px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    code { font-family: "Fira Code", "Cascadia Code", monospace; }
+    .badge {
+      display: inline-block;
+      background: #dcfce7;
+      color: #16a34a;
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+    th { text-align: left; background: #f1f5f9; padding: 10px 14px; }
+    td { padding: 10px 14px; border-top: 1px solid #e2e8f0; vertical-align: top; }
+  </style>
+</head>
+<body>
+
+<header>🤖 RAG Chatbot – Widget Demo</header>
+
+<main>
+  <h1>Embeddable AI Chat Widget</h1>
+  <p>
+    This page demonstrates how to embed the RAG-powered chatbot on any website
+    using a single <code>&lt;script&gt;</code> tag. Click the purple button in
+    the bottom-right corner to try it.
+  </p>
+
+  <!-- ── Architecture overview ─────────────────────────────────────────── -->
+  <div class="card">
+    <span class="badge">Architecture</span>
+    <h2>How it works</h2>
+    <table>
+      <thead>
+        <tr><th>Layer</th><th>Technology</th><th>Role</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Knowledge Engine</strong></td>
+          <td>Python · BeautifulSoup · LangChain · ChromaDB</td>
+          <td>Crawls the target website, chunks text, stores vector embeddings.</td>
+        </tr>
+        <tr>
+          <td><strong>RAG Chain</strong></td>
+          <td>OpenAI Embeddings + GPT-4o-mini</td>
+          <td>Retrieves relevant chunks and generates grounded answers.</td>
+        </tr>
+        <tr>
+          <td><strong>Backend API</strong></td>
+          <td>FastAPI (Python)</td>
+          <td>Exposes <code>/ingest</code> and <code>/chat</code> REST endpoints.</td>
+        </tr>
+        <tr>
+          <td><strong>Chat Widget</strong></td>
+          <td>Vanilla JavaScript</td>
+          <td>Floating UI injected into any page via a single script tag.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Embed snippet ─────────────────────────────────────────────────── -->
+  <div class="card">
+    <span class="badge">Integration</span>
+    <h2>Embed on your website</h2>
+    <p>Paste these two tags just before <code>&lt;/body&gt;</code>:</p>
+<pre><code>&lt;!-- 1. Configure the widget --&gt;
+&lt;script&gt;
+  window.ChatWidgetConfig = {
+    apiUrl:       "https://your-api-server.com",
+    title:        "Support Chat",
+    primaryColor: "#4f46e5",
+  };
+&lt;/script&gt;
+
+&lt;!-- 2. Load the widget --&gt;
+&lt;script src="chat-widget.js" defer&gt;&lt;/script&gt;</code></pre>
+  </div>
+
+  <!-- ── Quick-start ───────────────────────────────────────────────────── -->
+  <div class="card">
+    <span class="badge">Quick Start</span>
+    <h2>Backend setup</h2>
+<pre><code># 1. Install Python dependencies
+cd backend
+pip install -r requirements.txt
+
+# 2. Configure environment variables
+cp .env.example .env
+# Edit .env and add your OPENAI_API_KEY
+
+# 3. Ingest your website (one-time)
+python ingest.py --url https://your-site.com --max-pages 50
+
+# 4. Start the API server
+uvicorn api:app --host 0.0.0.0 --port 8000 --reload</code></pre>
+  </div>
+</main>
+
+<!--
+  ══ Chat Widget Integration ══════════════════════════════════════════════════
+  This is the actual widget integration – identical to the snippet above.
+  Point apiUrl at your running FastAPI server.
+-->
+<script>
+  window.ChatWidgetConfig = {
+    apiUrl: "http://localhost:8000",
+    title:  "Support Chat",
+    primaryColor: "#4f46e5",
+  };
+</script>
+<script src="chat-widget.js" defer></script>
+
+</body>
+</html>
