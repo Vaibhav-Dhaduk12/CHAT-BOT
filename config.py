@@ -50,15 +50,22 @@ class Settings(BaseSettings):
     EMBEDDING_DIMENSION: int = 384  # For MiniLM-L6-v2; 1536 for OpenAI
     
     # OpenAI Settings (Optional for production)
-    OPENAI_API_KEY: Optional[str] = 'ijklqrst5678uvwxijklqrst5678uvwxijklqrst'
+    OPENAI_API_KEY: Optional[str] = None
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-large"
     OPENAI_EMBEDDING_DIMENSION: int = 1536
     OPENAI_LLM_MODEL: str = "gpt-4"
     OPENAI_LLM_TEMPERATURE: float = 0.7
     OPENAI_REQUEST_TIMEOUT: int = 30
     
+    # Google Gemini Settings (Optional for production)
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_EMBEDDING_MODEL: str = "models/embedding-001"
+    GEMINI_EMBEDDING_DIMENSION: int = 768
+    GEMINI_LLM_MODEL: str = "gemini-1.5-flash"
+    GEMINI_LLM_TEMPERATURE: float = 0.7
+    
     # Vector Database Settings
-    VECTOR_DB_PROVIDER: str = "chromadb"  # "chromadb", "pinecone", "weaviate"
+    VECTOR_DB_PROVIDER: str = "faiss"  # "faiss" currently implemented
     CHROMADB_PATH: str = ".chroma_db"
     CHROMADB_COLLECTION_NAME: str = "chatbot_embeddings"
     
@@ -80,6 +87,12 @@ class Settings(BaseSettings):
     # Database Settings
     DATABASE_URL: str = "sqlite:///./chatbot.db"
     # For PostgreSQL: "postgresql://user:password@localhost/chatbot_db"
+    
+    # Supabase PostgreSQL Settings
+    SUPABASE_URL: str = "https://wzlkabxfdcxgvrqauiee.supabase.co"
+    SUPABASE_KEY: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6bGthYnhmZGN4Z3ZycWF1aWVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTEyNzg2MTgsImV4cCI6MTc0Mjk5OTAyOH0.RfWE1Pz_Yx7kKYzXGlJJoRH9_pZBhNfZFGf0U5rI_N0"
+    SUPABASE_PASSWORD: str = "Raju@3321##"
+    USE_SUPABASE: bool = True  # Enable/disable Supabase integration
     
     # Logging
     LOG_LEVEL: str = "INFO"
@@ -117,6 +130,10 @@ def validate_settings() -> bool:
     if settings.ENVIRONMENT == "production":
         if not settings.OPENAI_API_KEY and settings.EMBEDDING_PROVIDER == "openai":
             logger.error("OPENAI_API_KEY is required for production with OpenAI embeddings")
+            return False
+        
+        if not settings.GEMINI_API_KEY and settings.EMBEDDING_PROVIDER == "google":
+            logger.error("GEMINI_API_KEY is required for production with Google Gemini embeddings")
             return False
         
         if not settings.SECRET_KEY.startswith("sk_"):

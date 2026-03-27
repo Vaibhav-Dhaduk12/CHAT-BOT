@@ -1,9 +1,10 @@
 """
-Web Crawler for extracting content from target websites.
+Hybrid Web Crawler for extracting content from target websites.
 
 Features:
-- Automates browser navigation with Playwright
-- Handles JavaScript-heavy SPAs
+- Tries multiple strategies: Sitemap → API → SPA Click Navigation
+- Automates browser navigation with Playwright for SPAs
+- Content-based deduplication (hash checking)
 - Respects robots.txt and rate limiting
 - Extracts clean text, removing noise (ads, navigation)
 - Stores raw content with metadata
@@ -13,14 +14,16 @@ import asyncio
 import json
 import logging
 from pathlib import Path
-from typing import List, Dict, Optional, Set
+from typing import List, Dict, Optional, Set, Tuple
 from datetime import datetime
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse, urlunparse
 import hashlib
+import xml.etree.ElementTree as ET
 
 from playwright.async_api import async_playwright, Page, Browser, BrowserContext
 from bs4 import BeautifulSoup
 import aiofiles
+import httpx
 
 from config import settings
 
@@ -28,23 +31,43 @@ logger = logging.getLogger(__name__)
 
 
 class WebCrawler:
-    """Async web crawler using Playwright for content extraction."""
+    """Hybrid web crawler with multiple extraction strategies."""
     
     def __init__(self, chatbot_id: str):
         self.chatbot_id = chatbot_id
         self.visited_urls: Set[str] = set()
+        self.visited_content_hashes: Set[str] = set()  # For deduplication
         self.output_dir = Path(settings.DATA_RAW_DIR) / chatbot_id
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
     async def crawl_website(self, start_url: str) -> List[Dict]:
         """
-        Main entry point: crawl website starting from URL.
+        Main entry point: try multiple strategies to crawl website.
+        
+        Strategy order:
+        1. Sitemap.xml (best for discovering all pages)
+        2. API endpoints (if available)
+        3. SPA click navigation (fallback)
         
         Returns:
             List of documents with extracted content and metadata
         """
-        logger.info(f"Starting crawl of {start_url} for chatbot_id={self.chatbot_id}")
+        logger.info(f"🚀 Starting hybrid crawl of {start_url} for chatbot_id={self.chatbot_id}")
+        documents = []
+        base_domain = urlparse(start_url).netloc
         
+        # Strategy 1: Try sitemap.xml
+        logger.info("📋 Strategy 1: Checking for sitemap.xml...")
+        sitemap_docs = await self._crawl_from_sitemap(start_url, base_domain)
+        if sitemap_docs:
+            logger.info(f"✅ Sitemap found! Extracted {len(sitemap_docs)} pages from sitemap.xml")
+            documents.extend(sitemap_docs)
+            return documents
+        
+        logger.info("❌ No sitemap.xml found, proceeding to alternate strategies")
+        
+        # Strategy 2: Try SPA click navigation
+        logger.info("🔗 Strategy 2: Using SPA click-based crawling...")
         async with async_playwright() as p:
             browser = await p.chromium.launch()
             context = await browser.new_context(
@@ -53,99 +76,322 @@ class WebCrawler:
             )
             
             try:
-                documents = await self._crawl_recursive(
+                documents = await self._crawl_spa(
                     context=context,
-                    url=start_url,
-                    depth=0,
-                    base_domain=urlparse(start_url).netloc
+                    start_url=start_url,
+                    base_domain=base_domain
                 )
             finally:
                 await context.close()
                 await browser.close()
         
-        logger.info(f"Crawl complete: extracted {len(documents)} documents")
+        logger.info(f"✅ Crawl complete: extracted {len(documents)} documents")
         return documents
     
-    async def _crawl_recursive(
+    async def _crawl_from_sitemap(self, start_url: str, base_domain: str) -> List[Dict]:
+        """
+        Extract URLs from sitemap.xml and crawl them.
+        
+        Returns:
+            List of documents extracted from sitemap URLs
+        """
+        try:
+            base_parsed = urlparse(start_url)
+            sitemap_url = f"{base_parsed.scheme}://{base_parsed.netloc}/sitemap.xml"
+            
+            logger.debug(f"Attempting to fetch sitemap from: {sitemap_url}")
+            
+            async with httpx.AsyncClient() as client:
+                try:
+                    resp = await client.get(sitemap_url, timeout=10)
+                    
+                    if resp.status_code != 200:
+                        logger.debug(f"Sitemap not found (status {resp.status_code})")
+                        return []
+                    
+                    content = resp.text
+                    root = ET.fromstring(content)
+                    
+                    # Extract URLs from sitemap
+                    namespace = {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+                    urls = [url.text for url in root.findall('.//ns:loc', namespace)]
+                    
+                    if not urls:
+                        logger.debug("Sitemap exists but no URLs found")
+                        return []
+                    
+                    logger.info(f"Found {len(urls)} URLs in sitemap")
+                    
+                    # Crawl each URL from sitemap
+                    documents = []
+                    async with async_playwright() as p:
+                        browser = await p.chromium.launch()
+                        context = await browser.new_context(
+                            user_agent=settings.CRAWLER_USER_AGENT,
+                            viewport={"width": 1280, "height": 720}
+                        )
+                        
+                        try:
+                            for url in urls[:settings.CRAWLER_MAX_PAGES]:
+                                try:
+                                    doc = await self._fetch_and_extract(context, url, base_domain)
+                                    if doc:
+                                        documents.append(doc)
+                                except Exception as e:
+                                    logger.warning(f"Error crawling sitemap URL {url}: {e}")
+                                    continue
+                        finally:
+                            await context.close()
+                            await browser.close()
+                    
+                    return documents
+                    
+                except Exception as e:
+                    logger.debug(f"Failed to fetch sitemap: {e}")
+                    return []
+                    
+        except Exception as e:
+            logger.debug(f"Sitemap extraction error: {e}")
+            return []
+    
+    async def _crawl_spa(
         self,
         context: BrowserContext,
-        url: str,
-        depth: int,
+        start_url: str,
         base_domain: str
     ) -> List[Dict]:
         """
-        Recursively crawl pages up to max depth/page count.
+        Crawl SPA using click simulation and API interception.
+        Captures both UI content AND API responses.
         """
-        if len(self.visited_urls) >= settings.CRAWLER_MAX_PAGES:
-            logger.info(f"Reached max pages limit ({settings.CRAWLER_MAX_PAGES})")
-            return []
-        
-        if depth > settings.CRAWLER_MAX_DEPTH:
-            logger.debug(f"Reached max depth ({settings.CRAWLER_MAX_DEPTH}) at {url}")
-            return []
-        
-        if url in self.visited_urls:
-            return []
-        
-        # Check domain to prevent crawling outside target domain
-        if urlparse(url).netloc != base_domain:
-            logger.debug(f"Skipping external URL: {url}")
-            return []
-        
-        self.visited_urls.add(url)
         documents = []
+        api_responses = {}  # Track API calls
         
         try:
             page = await context.new_page()
             page.set_default_timeout(settings.CRAWLER_TIMEOUT * 1000)
             
-            logger.debug(f"Fetching: {url}")
-            await page.goto(url, wait_until="domcontentloaded")
-            
-            # Wait for JavaScript to render
-            await page.wait_for_load_state("networkidle")
-            
-            # Extract content
-            html_content = await page.content()
-            document = await self._extract_content(url, html_content, base_domain)
-            
-            if document:
-                documents.append(document)
+            # Intercept API calls
+            async def handle_route(route):
+                request = route.request
+                response = await route.fetch()
                 
-                # Save raw content
-                await self._save_raw_document(document)
+                # Capture API responses (JSON data)
+                if 'application/json' in response.headers.get('content-type', ''):
+                    try:
+                        data = await response.json()
+                        api_url = request.url
+                        
+                        if api_url not in api_responses:
+                            api_responses[api_url] = data
+                            logger.info(f"🔗 Captured API: {api_url}")
+                    except:
+                        pass
+                
+                await route.continue_()
             
-            # Extract and crawl internal links
-            links = await page.evaluate("""
-                () => Array.from(document.querySelectorAll('a[href]'))
-                    .map(a => a.href)
-                    .filter(href => href && !href.startsWith('javascript:'))
+            # Set up interception for API calls
+            await page.route('**/*', handle_route)
+            
+            logger.debug(f"Fetching SPA: {start_url}")
+            await page.goto(start_url, wait_until="domcontentloaded")
+            await page.wait_for_load_state("networkidle")
+            await page.wait_for_timeout(2000)
+            
+            # Extract initial page
+            initial_doc = await self._extract_content_from_page(page, start_url, base_domain)
+            if initial_doc:
+                documents.append(initial_doc)
+            
+            # Get interactive elements
+            elements = await page.evaluate("""
+                () => {
+                    const elements = [];
+                    document.querySelectorAll('button, a, [role="button"]').forEach(el => {
+                        if (el.offsetParent !== null && el.textContent.trim().length > 0) {
+                            elements.push({
+                                text: el.textContent.trim().substring(0, 50),
+                                type: el.tagName
+                            });
+                        }
+                    });
+                    return elements.slice(0, 20);
+                }
             """)
             
-            # Crawl child pages
-            if links:
-                for link in links[:10]:  # Limit links per page
+            logger.info(f"Found {len(elements)} interactive elements on SPA")
+            
+            # Click elements to trigger API calls
+            for idx, elem in enumerate(elements):
+                if len(documents) >= settings.CRAWLER_MAX_PAGES:
+                    break
+                
+                try:
+                    logger.debug(f"Clicking element {idx+1}/{len(elements)}: {elem['text']}")
+                    
+                    content_before = await page.content()
+                    before_hash = hashlib.md5(content_before.encode()).hexdigest()
+                    
+                    await page.evaluate(f"""
+                        Array.from(document.querySelectorAll('button, a, [role="button"]'))[{idx}]?.click()
+                    """)
+                    
+                    await page.wait_for_timeout(2000)
+                    
                     try:
-                        normalized_link = self._normalize_url(link)
-                        if normalized_link not in self.visited_urls:
-                            child_docs = await self._crawl_recursive(
-                                context=context,
-                                url=normalized_link,
-                                depth=depth + 1,
-                                base_domain=base_domain
-                            )
-                            documents.extend(child_docs)
-                    except Exception as e:
-                        logger.warning(f"Error crawling child link {link}: {e}")
-                        continue
+                        await page.wait_for_load_state("networkidle", timeout=3000)
+                    except:
+                        pass
+                    
+                    content_after = await page.content()
+                    after_hash = hashlib.md5(content_after.encode()).hexdigest()
+                    
+                    if before_hash != after_hash:
+                        current_url = page.url
+                        
+                        if current_url not in self.visited_urls:
+                            doc = await self._extract_content_from_page(page, current_url, base_domain)
+                            if doc:
+                                content_hash = hashlib.md5(doc['content'].encode()).hexdigest()
+                                if content_hash not in self.visited_content_hashes:
+                                    documents.append(doc)
+                                    self.visited_content_hashes.add(content_hash)
+                                    logger.info(f"✅ Extracted new page: {current_url}")
+                            
+                            self.visited_urls.add(current_url)
+                    
+                except Exception as e:
+                    logger.warning(f"Error clicking element {idx}: {e}")
+                    continue
+            
+            # Convert captured API responses to documents
+            for api_url, api_data in api_responses.items():
+                try:
+                    # Skip if we've already processed limit
+                    if len(documents) >= settings.CRAWLER_MAX_PAGES:
+                        break
+                    
+                    # Convert API response to document
+                    api_doc = await self._extract_api_data(api_url, api_data)
+                    if api_doc:
+                        content_hash = hashlib.md5(api_doc['content'].encode()).hexdigest()
+                        if content_hash not in self.visited_content_hashes:
+                            documents.append(api_doc)
+                            self.visited_content_hashes.add(content_hash)
+                            logger.info(f"✅ Extracted API data from: {api_url}")
+                except Exception as e:
+                    logger.warning(f"Error extracting API data from {api_url}: {e}")
             
             await page.close()
             
         except Exception as e:
-            logger.error(f"Error crawling {url}: {e}", exc_info=True)
-            return documents
+            logger.error(f"Error in SPA crawl: {e}", exc_info=True)
         
+        logger.info(f"Total API calls captured: {len(api_responses)}")
         return documents
+    
+    async def _extract_api_data(self, api_url: str, api_data: dict) -> Optional[Dict]:
+        """
+        Convert API JSON response to a document.
+        """
+        try:
+            # Flatten nested JSON into readable text
+            def flatten_json(obj, prefix=""):
+                result = []
+                if isinstance(obj, dict):
+                    for key, value in obj.items():
+                        if isinstance(value, (dict, list)):
+                            result.extend(flatten_json(value, f"{prefix}{key}."))
+                        else:
+                            result.append(f"{prefix}{key}: {value}")
+                elif isinstance(obj, list):
+                    for idx, item in enumerate(obj[:10]):  # Limit to 10 items
+                        result.extend(flatten_json(item, f"{prefix}[{idx}]."))
+                else:
+                    result.append(str(obj))
+                return result
+            
+            flattened = flatten_json(api_data)
+            content = "\n".join(flattened)
+            
+            if not content or len(content) < 50:
+                return None
+            
+            document = {
+                "url": api_url,
+                "title": f"API Response: {urlparse(api_url).path}",
+                "content": content,
+                "content_length": len(content),
+                "crawled_at": datetime.utcnow().isoformat(),
+                "chatbot_id": self.chatbot_id,
+                "metadata": {
+                    "page_type": "api",
+                    "domain": urlparse(api_url).netloc,
+                    "path": urlparse(api_url).path
+                }
+            }
+            
+            await self._save_raw_document(document)
+            return document
+            
+        except Exception as e:
+            logger.warning(f"Error extracting API data: {e}")
+            return None
+    
+    async def _fetch_and_extract(
+        self,
+        context: BrowserContext,
+        url: str,
+        base_domain: str
+    ) -> Optional[Dict]:
+        """
+        Fetch a single URL and extract content.
+        Used for sitemap-based crawling.
+        """
+        if len(self.visited_urls) >= settings.CRAWLER_MAX_PAGES:
+            return None
+        
+        if url in self.visited_urls:
+            return None
+        
+        if urlparse(url).netloc != base_domain:
+            logger.debug(f"Skipping external URL: {url}")
+            return None
+        
+        self.visited_urls.add(url)
+        
+        try:
+            page = await context.new_page()
+            page.set_default_timeout(settings.CRAWLER_TIMEOUT * 1000)
+            
+            await page.goto(url, wait_until="domcontentloaded")
+            await page.wait_for_load_state("networkidle")
+            await page.wait_for_timeout(1000)
+            
+            doc = await self._extract_content_from_page(page, url, base_domain)
+            await page.close()
+            
+            return doc
+            
+        except Exception as e:
+            logger.warning(f"Error fetching {url}: {e}")
+            return None
+    
+    async def _extract_content_from_page(
+        self,
+        page: Page,
+        url: str,
+        base_domain: str
+    ) -> Optional[Dict]:
+        """
+        Extract clean content from a loaded page.
+        """
+        try:
+            html_content = await page.content()
+            return await self._extract_content(url, html_content, base_domain)
+        except Exception as e:
+            logger.error(f"Error extracting from page {url}: {e}")
+            return None
     
     async def _extract_content(
         self,
@@ -205,6 +451,9 @@ class WebCrawler:
                 }
             }
             
+            # Save raw content
+            await self._save_raw_document(document)
+            
             logger.debug(f"Extracted {len(text)} chars from {url}")
             return document
             
@@ -228,7 +477,16 @@ class WebCrawler:
     def _normalize_url(url: str) -> str:
         """Normalize URL to prevent duplicates (remove fragments, etc)."""
         parsed = urlparse(url)
-        return f"{parsed.scheme}://{parsed.netloc}{parsed.path}{'?' + parsed.query if parsed.query else ''}"
+        normalized_path = parsed.path.rstrip("/")
+        cleaned = parsed._replace(path=normalized_path, params="", fragment="")
+        return urlunparse((
+            cleaned.scheme,
+            cleaned.netloc,
+            cleaned.path,
+            cleaned.params,
+            cleaned.query,
+            cleaned.fragment,
+        ))
     
     @staticmethod
     def _infer_page_type(url: str) -> str:

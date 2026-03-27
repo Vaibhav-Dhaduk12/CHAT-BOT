@@ -54,7 +54,7 @@ This project is **currently in Phase 1** with all core components tested and val
 - **LXML** - XML/HTML processing
 
 ### Natural Language Processing & RAG
-- **LangChain** (0.0.350) - RAG orchestration and text processing
+- **LangChain Text Splitters** (0.3.11) - Recursive semantic chunking utilities
 - **Sentence-Transformers** (≥2.7.0) - Free local embeddings (HuggingFace models)
 - **Tiktoken** (≥0.5.0) - Token counting for LLMs
 
@@ -91,7 +91,7 @@ This project is **currently in Phase 1** with all core components tested and val
 |---------|-------------|--------|
 | **Web Crawler** | Async Playwright-based crawling with BFS algorithm | ✅ |
 | **JavaScript Support** | Renders SPAs and dynamic content | ✅ |
-| **Text Processor** | LangChain semantic chunking (400-600 tokens) | ✅ |
+| **Text Processor** | Recursive semantic chunking (400-600 tokens) | ✅ |
 | **Local Embeddings** | Free HuggingFace models (no API keys needed) | ✅ |
 | **Vector Database** | FAISS for efficient similarity search | ✅ |
 | **Multi-Tenancy** | Namespace-based data isolation | ✅ |
@@ -122,7 +122,7 @@ CHAT-BOT/
 ├── 📂 api/                         # Backend API modules
 │   ├── __init__.py
 │   ├── embeddings.py              # Embedding generation & FAISS DB
-│   ├── processor.py               # Text chunking with LangChain
+│   ├── processor.py               # Text chunking with langchain-text-splitters
 │   └── routes/                    # (Phase 2) API endpoints
 │
 ├── 📂 scripts/                     # Utility scripts
@@ -390,7 +390,7 @@ CHAT-BOT/
 #### What Happens Behind the Scenes
 
 1. **Crawl**: Playwright downloads & renders each page, extracts text
-2. **Process**: LangChain chunks text semantically (maintaining context)
+2. **Process**: Recursive splitter chunks text semantically (maintaining context)
 3. **Embed**: HuggingFace generates 384-dimensional embeddings
 4. **Index**: FAISS stores vectors for similarity search
 5. **Query**: Tests retrieval with sample queries (shows distance scores)
@@ -670,7 +670,7 @@ python run_pipeline.py  # Recreates fresh index
 - **[PIPELINE_USAGE.md](PIPELINE_USAGE.md)** - Quick reference & common examples for `run_pipeline.py`
 - **[Phase 1 Complete Documentation](PHASE_1_COMPLETE.md)** - Detailed completion summary
 - **[Phase 1 Technical README](PHASE_1_README.md)** - Advanced setup & configuration
-- **[LangChain Docs](https://python.langchain.com/)** - RAG framework documentation
+- **[LangChain Text Splitters](https://python.langchain.com/docs/how_to/#text-splitters)** - Chunking utilities documentation
 - **[FAISS Docs](https://github.com/facebookresearch/faiss)** - Vector database guide
 - **[FastAPI Docs](https://fastapi.tiangolo.com/)** - REST API framework
 

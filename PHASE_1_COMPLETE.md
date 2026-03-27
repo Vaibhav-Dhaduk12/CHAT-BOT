@@ -20,7 +20,7 @@
 - ✅ Error handling & retry logic
 
 ### 2. Text Processor (`api/processor.py`)
-- ✅ LangChain semantic text chunking (RecursiveCharacterTextSplitter)
+- ✅ Recursive semantic text chunking (`langchain-text-splitters`)
 - ✅ Token-aware chunking (400-600 token targets)
 - ✅ Tiktoken-based token counting
 - ✅ Metadata preservation per chunk
@@ -53,7 +53,7 @@ All 40+ packages successfully installed:
 ```
 ✓ fastapi==0.95.2
 ✓ pydantic==1.10.13
-✓ langchain==0.0.350
+✓ langchain-text-splitters==0.3.11
 ✓ playwright==1.40.0
 ✓ sentence-transformers>=2.7.0
 ✓ faiss-cpu==1.13.2  (pure Python, no C++ needed!)
@@ -192,7 +192,7 @@ RAG_CONFIDENCE_THRESHOLD=0.7
 | Operation | Duration | Notes |
 |-----------|----------|-------|
 | Crawl homepage + 10 pages | 30-45s | Playwright JS rendering |
-| Process 10K tokens | 0.5s | LangChain chunking |
+| Process 10K tokens | 0.5s | Recursive splitter chunking |
 | Embed 100 chunks | 2-3s | Batch processing |
 | Query (single) | 10-20ms | FAISS L2 search |
 | Query (batch 10x) | 50-100ms | Parallel operations |
@@ -302,7 +302,7 @@ With Phase 1 complete, you can now:
 | Component | Technology | Version | Purpose |
 |-----------|-----------|---------|---------|
 | Crawler | Playwright | 1.40.0 | Browser automation |
-| Processing | LangChain | 0.0.350 | Text chunking/RAG |
+| Processing | LangChain Text Splitters | 0.3.11 | Text chunking |
 | Embeddings | Sentence-Transformers | ≥2.7.0 | Local embeddings |
 | Vector DB | FAISS | 1.13.2 | Vector search |
 | Configuration | Pydantic | 1.10.13 | Settings management |

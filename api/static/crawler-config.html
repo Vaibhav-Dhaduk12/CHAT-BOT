@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Configuration Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #15213b 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+
+        /* LEFT PANEL: CONFIGURATION FORM */
+        .config-panel {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 30px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .config-panel h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: #e2e8f0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid #475569;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #7c3aed;
+            background: rgba(15, 23, 42, 0.95);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(124, 58, 237, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(100, 116, 139, 0.2);
+            color: #cbd5e0;
+            border: 1px solid #475569;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(100, 116, 139, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* RIGHT PANEL: STATUS & RESULTS */
+        .status-panel {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-panel h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: #e2e8f0;
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #64748b;
+        }
+
+        .status-indicator.connecting {
+            background: #f59e0b;
+            animation: pulse-orange 2s infinite;
+        }
+
+        .status-indicator.running {
+            background: #10b981;
+            animation: pulse-green 2s infinite;
+        }
+
+        .status-indicator.success {
+            background: #10b981;
+        }
+
+        .status-indicator.error {
+            background: #ef4444;
+        }
+
+        @keyframes pulse-orange {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            flex: 1;
+        }
+
+        .status-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .status-subtitle {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .progress-section {
+            margin-bottom: 24px;
+        }
+
+        .progress-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(100, 116, 139, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7c3aed 0%, #ec4899 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #7c3aed;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .log-container {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px;
+            height: 300px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .log-entry {
+            font-size: 11px;
+            padding: 6px;
+            margin-bottom: 4px;
+            border-left: 3px solid #475569;
+            padding-left: 10px;
+            color: #cbd5e0;
+            font-family: 'Courier New', monospace;
+            line-height: 1.4;
+        }
+
+        .log-entry.info {
+            border-left-color: #7c3aed;
+            color: #a78bfa;
+        }
+
+        .log-entry.success {
+            border-left-color: #10b981;
+            color: #6ee7b7;
+        }
+
+        .log-entry.error {
+            border-left-color: #ef4444;
+            color: #fca5a5;
+        }
+
+        .log-entry.warning {
+            border-left-color: #f59e0b;
+            color: #fcd34d;
+        }
+
+        .chatbots-list {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .chatbots-list h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #e2e8f0;
+        }
+
+        .chatbot-item {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .chatbot-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .chatbot-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .chatbot-action-btn {
+            padding: 6px 10px;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            background: rgba(124, 58, 237, 0.15);
+            color: #e2e8f0;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .chatbot-action-btn:hover {
+            border-color: #a78bfa;
+            background: rgba(124, 58, 237, 0.3);
+        }
+
+        .chatbot-name {
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+
+        .chatbot-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .chatbot-status.ready {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+        }
+
+        .chatbot-status.processing {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fcd34d;
+        }
+
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .config-panel {
+                position: static;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .log-container {
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>🤖 Chatbot Configuration & Crawler</h1>
+            <p>Setup website crawling, manage configurations, and monitor progress</p>
+        </div>
+
+        <!-- CONTENT GRID -->
+        <div class="content">
+            <!-- LEFT: CONFIGURATION FORM -->
+            <div class="config-panel">
+                <h2>New Chatbot Setup</h2>
+
+                <form id="chatbot-form">
+                    <div class="form-group">
+                        <label for="chatbot-id">Chatbot ID *</label>
+                        <input 
+                            type="text" 
+                            id="chatbot-id" 
+                            placeholder="e.g., phoenix_insurance_bot"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="chatbot-name">Chatbot Name *</label>
+                        <input 
+                            type="text" 
+                            id="chatbot-name" 
+                            placeholder="e.g., Phoenix Insurance AI"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="website-url">Website URL *</label>
+                        <input 
+                            type="url" 
+                            id="website-url" 
+                            placeholder="https://example.com"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea 
+                            id="description" 
+                            placeholder="Describe what this chatbot will do..."
+                        ></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="max-pages">Max Pages</label>
+                        <input 
+                            type="number" 
+                            id="max-pages" 
+                            value="50"
+                            min="1"
+                            max="500"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="max-depth">Max Depth</label>
+                        <input 
+                            type="number" 
+                            id="max-depth" 
+                            value="2"
+                            min="1"
+                            max="10"
+                        >
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary" id="start-btn">
+                            🚀 Start Crawler
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="reset-btn">
+                            Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- RIGHT: STATUS & MONITORING -->
+            <div class="status-panel">
+                <h2>Crawler Status & Progress</h2>
+
+                <!-- Status Header -->
+                <div class="status-header">
+                    <div class="status-indicator" id="status-indicator"></div>
+                    <div class="status-text">
+                        <div class="status-title" id="status-title">Idle - Ready to crawl</div>
+                        <div class="status-subtitle" id="status-subtitle">Configure and start a new crawl</div>
+                    </div>
+                </div>
+
+                <!-- Progress Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-pages">0</div>
+                        <div class="stat-label">Pages Crawled</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-chunks">0</div>
+                        <div class="stat-label">Chunks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-time">0s</div>
+                        <div class="stat-label">Elapsed Time</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-size">0KB</div>
+                        <div class="stat-label">Total Size</div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress-section">
+                    <div class="progress-label">
+                        <span>Overall Progress</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Log Output -->
+                <div class="log-container" id="log-container">
+                    <div class="log-entry info">Ready to start crawling...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHATBOTS LIST -->
+        <div class="chatbots-list">
+            <h3>📊 Your Chatbots</h3>
+            <div id="chatbots-container">
+                <div class="log-entry">Loading chatbots...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        let crawlProgress = {
+            pages: 0,
+            chunks: 0,
+            startTime: null
+        };
+        let activeChatbotId = null;
+        let activeMaxPages = 50;
+        let statusPollTimer = null;
+
+        // ==================== INITIALIZATION ====================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadChatbots();
+            setupFormHandlers();
+        });
+
+        // ==================== FORM HANDLERS ====================
+
+        function setupFormHandlers() {
+            const form = document.getElementById('chatbot-form');
+            const resetBtn = document.getElementById('reset-btn');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await startCrawl();
+            });
+
+            resetBtn.addEventListener('click', () => {
+                form.reset();
+                updateStatus('idle', 'Ready to crawl', 'Configure and start a new crawl');
+            });
+        }
+
+        // ==================== CRAWLING ====================
+
+        async function startCrawl() {
+            const chatbotId = document.getElementById('chatbot-id').value;
+            const chatbotName = document.getElementById('chatbot-name').value;
+            const websiteUrl = document.getElementById('website-url').value;
+            const description = document.getElementById('description').value;
+            const maxPages = parseInt(document.getElementById('max-pages').value);
+            const maxDepth = parseInt(document.getElementById('max-depth').value);
+
+            // Validate
+            if (!chatbotId || !websiteUrl) {
+                addLog('❌ Please fill in required fields', 'error');
+                return;
+            }
+
+            // Update status
+            updateStatus('running', 'Crawling in progress...', 'Processing: ' + websiteUrl);
+            crawlProgress = { pages: 0, chunks: 0, startTime: Date.now() };
+            activeChatbotId = chatbotId;
+            activeMaxPages = maxPages;
+            localStorage.setItem('activeChatbotId', chatbotId);
+            localStorage.setItem('selectedChatbot', chatbotId);
+
+            addLog(`🚀 Starting crawl for: ${chatbotId}`, 'info');
+            addLog(`📝 URL: ${websiteUrl}`, 'info');
+            addLog(`⚙️  Configuration: ${maxPages} pages, depth ${maxDepth}`, 'info');
+
+            try {
+                // Save configuration to database
+                const configRes = await fetch(`${API_URL}/api/chatbots/${chatbotId}/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chatbot_id: chatbotId,
+                        name: chatbotName,
+                        website_url: websiteUrl,
+                        description: description,
+                        max_pages: maxPages,
+                        max_depth: maxDepth,
+                        status: 'crawling'
+                    })
+                });
+
+                if (!configRes.ok) {
+                    throw new Error('Failed to save configuration');
+                }
+
+                addLog('✅ Configuration saved to database', 'success');
+
+                // Start crawler via Python pipeline
+                const crawlRes = await fetch(`${API_URL}/api/crawl`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chatbot_id: chatbotId,
+                        url: websiteUrl,
+                        max_pages: maxPages,
+                        max_depth: maxDepth,
+                        save_to_database: true
+                    })
+                });
+
+                const crawlData = await crawlRes.json();
+
+                if (!crawlRes.ok) {
+                    throw new Error(crawlData.detail || 'Crawl failed');
+                }
+
+                // Update stats
+                crawlProgress.pages = crawlData.pages_crawled || 0;
+                crawlProgress.chunks = crawlData.chunks_created || 0;
+
+                addLog(`⏳ Crawl accepted by server`, 'info');
+                addLog(`📡 Tracking status for: ${chatbotId}`, 'info');
+
+                // Update UI
+                updateStats();
+                updateStatus('running', 'Crawl running...', 'Background job started');
+                startStatusPolling(chatbotId);
+
+                // Reload chatbots list
+                loadChatbots();
+
+            } catch (error) {
+                addLog(`❌ Error: ${error.message}`, 'error');
+                updateStatus('error', 'Crawl failed', error.message);
+            }
+        }
+
+        // ==================== LOGGING & STATUS ====================
+
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('log-container');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function updateStatus(status, title, subtitle) {
+            const indicator = document.getElementById('status-indicator');
+            indicator.className = 'status-indicator ' + status;
+            
+            document.getElementById('status-title').textContent = title;
+            document.getElementById('status-subtitle').textContent = subtitle;
+        }
+
+        function updateStats() {
+            document.getElementById('stat-pages').textContent = crawlProgress.pages;
+            document.getElementById('stat-chunks').textContent = crawlProgress.chunks;
+            
+            if (crawlProgress.startTime) {
+                const elapsed = Math.floor((Date.now() - crawlProgress.startTime) / 1000);
+                document.getElementById('stat-time').textContent = elapsed + 's';
+            }
+            
+            // Update progress bar
+            const progress = Math.min(100, (crawlProgress.pages / Math.max(1, activeMaxPages)) * 100);
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('progress-percent').textContent = Math.floor(progress) + '%';
+        }
+
+        function startStatusPolling(chatbotId) {
+            if (statusPollTimer) {
+                clearInterval(statusPollTimer);
+            }
+
+            statusPollTimer = setInterval(async () => {
+                try {
+                    const res = await fetch(`${API_URL}/api/crawl-status/${chatbotId}`);
+                    const status = await res.json();
+
+                    crawlProgress.pages = status.pages_crawled || 0;
+                    crawlProgress.chunks = status.chunks_created || 0;
+                    updateStats();
+
+                    if (status.status === 'completed') {
+                        addLog(`✅ Crawl complete!`, 'success');
+                        addLog(`📄 Pages crawled: ${crawlProgress.pages}`, 'info');
+                        addLog(`✂️ Chunks created: ${crawlProgress.chunks}`, 'info');
+                        updateStatus('success', 'Crawl completed!', `${crawlProgress.pages} pages, ${crawlProgress.chunks} chunks indexed`);
+                        clearInterval(statusPollTimer);
+                        statusPollTimer = null;
+                        loadChatbots();
+                    } else if (status.status === 'failed') {
+                        addLog(`❌ Crawl failed: ${status.error || 'Unknown error'}`, 'error');
+                        updateStatus('error', 'Crawl failed', status.error || 'Unknown error');
+                        clearInterval(statusPollTimer);
+                        statusPollTimer = null;
+                    } else if (status.status === 'crawling' || status.status === 'queued') {
+                        updateStatus('running', 'Crawling in progress...', `${crawlProgress.pages} pages discovered, ${crawlProgress.chunks} chunks`);
+                    }
+                } catch (error) {
+                    addLog(`⚠️ Status poll error: ${error.message}`, 'warning');
+                }
+            }, 2000);
+        }
+
+        // ==================== CHATBOTS LIST ====================
+
+        async function loadChatbots() {
+            try {
+                const res = await fetch(`${API_URL}/api/list-chatbots`);
+                const data = await res.json();
+
+                const container = document.getElementById('chatbots-container');
+                
+                if (!data.chatbots || data.chatbots.length === 0) {
+                    container.innerHTML = '<div class="log-entry">No chatbots yet. Create one above!</div>';
+                    return;
+                }
+
+                container.innerHTML = data.chatbots.map(bot => `
+                    <div class="chatbot-item">
+                        <div class="chatbot-meta">
+                            <span class="chatbot-name">🤖 ${bot.chatbot_id || bot.id || 'unknown'}</span>
+                            <span style="font-size:11px;color:#94a3b8;">${bot.chunks || 0} chunks</span>
+                        </div>
+                        <div class="chatbot-actions">
+                            <button class="chatbot-action-btn" onclick="selectExistingBot('${bot.chatbot_id || bot.id || ''}')">Select</button>
+                            <button class="chatbot-action-btn" onclick="openChatWithBot('${bot.chatbot_id || bot.id || ''}')">Chat</button>
+                            <span class="chatbot-status ${bot.status === 'ready' ? 'ready' : 'processing'}">
+                                ${bot.status.toUpperCase()}
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading chatbots:', error);
+            }
+        }
+
+        function selectExistingBot(chatbotId) {
+            if (!chatbotId) return;
+            document.getElementById('chatbot-id').value = chatbotId;
+            document.getElementById('chatbot-name').value = chatbotId;
+            localStorage.setItem('activeChatbotId', chatbotId);
+            localStorage.setItem('selectedChatbot', chatbotId);
+            addLog(`✅ Selected chatbot: ${chatbotId}`, 'success');
+            updateStatus('idle', 'Bot selected', `Active bot: ${chatbotId}`);
+        }
+
+        function openChatWithBot(chatbotId) {
+            if (!chatbotId) return;
+            localStorage.setItem('activeChatbotId', chatbotId);
+            localStorage.setItem('selectedChatbot', chatbotId);
+            window.location.href = '/';
+        }
+
+        // Auto-update stats
+        setInterval(updateStats, 1000);
+    </script>
+</body>
+</html>

@@ -30,6 +30,11 @@ try:
 except ImportError:
     openai = None
 
+try:
+    from google import genai
+except ImportError:
+    genai = None
+
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -130,6 +135,56 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     def dimension(self) -> int:
         """Get embedding dimension."""
         return settings.OPENAI_EMBEDDING_DIMENSION
+
+
+class GoogleGeminiEmbeddingProvider(EmbeddingProvider):
+    """Google Gemini embedding provider (paid, cloud)."""
+    
+    def __init__(self, api_key: str = settings.GEMINI_API_KEY):
+        if genai is None:
+            raise ImportError("google-genai not installed. Run: pip install google-genai")
+        
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY not provided")
+        
+        self.client = genai.Client(api_key=api_key)
+        self.model = settings.GEMINI_EMBEDDING_MODEL
+    
+    async def embed(self, texts: List[str]) -> List[List[float]]:
+        """Embed multiple texts using Google Gemini API."""
+        try:
+            embeddings = []
+            for text in texts:
+                result = self.client.models.embed_content(
+                    model=self.model,
+                    contents=text,
+                )
+
+                values = None
+                if hasattr(result, "embeddings") and result.embeddings:
+                    first_embedding = result.embeddings[0]
+                    values = getattr(first_embedding, "values", None)
+                elif hasattr(result, "embedding"):
+                    values = getattr(result.embedding, "values", None)
+
+                if not values:
+                    raise ValueError("No embedding values returned from Gemini API")
+
+                embeddings.append(list(values))
+            return embeddings
+        except Exception as e:
+            logger.error(f"Error embedding batch via Google Gemini: {e}")
+            raise
+    
+    async def embed_single(self, text: str) -> List[float]:
+        """Embed a single text via Google Gemini."""
+        embeddings = await self.embed([text])
+        return embeddings[0]
+    
+    @property
+    def dimension(self) -> int:
+        """Get embedding dimension."""
+        return settings.GEMINI_EMBEDDING_DIMENSION
 
 
 class VectorDatabase(ABC):
@@ -315,6 +370,8 @@ class EmbeddingManager:
             self.embedder = HuggingFaceEmbeddingProvider()
         elif embedding_provider == "openai":
             self.embedder = OpenAIEmbeddingProvider()
+        elif embedding_provider == "google":
+            self.embedder = GoogleGeminiEmbeddingProvider()
         else:
             raise ValueError(f"Unknown embedding provider: {embedding_provider}")
         

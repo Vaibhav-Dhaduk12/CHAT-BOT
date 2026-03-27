@@ -16,7 +16,7 @@ All dependencies are now installed, including:
 ```
 ✓ fastapi==0.95.2          - REST API framework
 ✓ pydantic==1.10.13        - Data validation
-✓ langchain==0.0.350       - Text processing & RAG
+✓ langchain-text-splitters==0.3.11  - Recursive text chunking
 ✓ playwright==1.40.0       - Web scraping
 ✓ sentence-transformers==2.2.2  - Local embeddings (no API keys needed)
 ✓ faiss-cpu==1.13.2        - Vector database (pure Python, fast)
@@ -35,7 +35,7 @@ CHAT-BOT/
 │
 ├── api/                   # Backend modules
 │   ├── __init__.py
-│   ├── processor.py       # Text chunking (LangChain RecursiveCharacterTextSplitter)
+│   ├── processor.py       # Text chunking (RecursiveCharacterTextSplitter)
 │   └── embeddings.py      # Embeddings + FAISS vector DB abstraction
 │
 ├── scripts/
@@ -487,7 +487,7 @@ After Phase 1 validation:
 | Operation | Duration | Details |
 |-----------|----------|---------|
 | Crawl homepage + 10 pages | 30-45s | Playwright, JS rendering |
-| Process 10K tokens | 0.5s | LangChain RecursiveTextSplitter |
+| Process 10K tokens | 0.5s | RecursiveCharacterTextSplitter |
 | Embed 100 chunks | 2-3s | Batch processing (batch_size=32) |
 | Query (single) | 10-20ms | FAISS L2 distance search |
 | Query (batch of 10) | 50-100ms | Parallel embedding + search |
@@ -500,7 +500,7 @@ After Phase 1 validation:
 
 **Technologies Used:**
 - [Playwright](https://playwright.dev/) - Browser automation
-- [LangChain](https://python.langchain.com/) - RAG orchestration
+- [LangChain Text Splitters](https://python.langchain.com/docs/how_to/#text-splitters) - Chunking utilities
 - [FAISS](https://github.com/facebookresearch/faiss) - Vector search
 - [Sentence-Transformers](https://www.sbert.net/) - Embeddings
 - [FastAPI](https://fastapi.tiangolo.com/) - API framework

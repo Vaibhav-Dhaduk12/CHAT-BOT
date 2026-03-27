@@ -2,7 +2,7 @@
 Data Processor for text chunking and preparation.
 
 Features:
-- Semantic chunking using LangChain's RecursiveCharacterTextSplitter
+- Semantic chunking using RecursiveCharacterTextSplitter
 - Preserves metadata and source information
 - Configurable chunk size and overlap
 - Validation of chunk integrity
@@ -15,7 +15,7 @@ from typing import List, Dict, Optional, Iterator
 from datetime import datetime
 import hashlib
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 import aiofiles
 import tiktoken
 

@@ -363,7 +363,7 @@ Examples:
         "--embedding-provider",
         type=str,
         default="huggingface",
-        choices=["huggingface", "openai"],
+        choices=["huggingface", "openai", "google"],
         help="Embedding provider (default: huggingface)"
     )
     
@@ -371,7 +371,7 @@ Examples:
         "--vector-db",
         type=str,
         default="faiss",
-        choices=["faiss", "chromadb"],
+        choices=["faiss"],
         help="Vector database (default: faiss)"
     )
     
